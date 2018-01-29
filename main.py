@@ -1,8 +1,6 @@
 from steem import Steem
 from steembase import exceptions
 
-import pprint
-
 # Steemit API Node
 nodes = ["https://api.steemit.com"]
 
