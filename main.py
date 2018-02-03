@@ -1,5 +1,9 @@
 from steem import Steem
 from steembase import exceptions
+import time
+import datetime
+
+identifier = []
 
 # Steemit API Node
 nodes = ["https://api.steemit.com"]
@@ -10,57 +14,49 @@ account = "wil1liam"
 # private posting key | private active key (to log in)
 keys=["private posting key", "private active key"]
 
-def relike(account,keys,nodes):
+s = Steem(nodes,keys=keys)
 
-    def newest_post(username):
-        limit = 100
-        result = None
-        while (result==None):
-            account_history = s.get_account_history(username,index_from=-1,limit=limit)
-            try:
-                for i in range(limit+1):
-                    operation = account_history[limit-i]
-                    if (operation[1]["op"][0] == "comment"):
-                        if (operation[1]["op"][1]["title"]!= ""):
-                            result = operation[1]["op"][1]["permlink"]
-                            return result
-            except IndexError:
-                return None
-            limit = limit * 2
-        return result
+def relike(account):
+
+    # your newest post
+    post_identifier = get_newest_post(account)
+
+    #the people who liked your post
+    usernames = get_voter(post_identifier)
+
+    # the newest posts of the people who liked your post + upvote their posts
+    upvote_newest_post(usernames,account)
+
+def get_newest_post(username):
+    newest_post = s.get_discussions_by_blog({"limit":1,"tag":username})
+    if(newest_post!=[]):
+        return newest_post[0]["author"]+"/"+newest_post[0]["permlink"]
+    else:
+        return None
 
 
-    s = Steem(nodes,keys=keys)
 
-    post_1 = newest_post(username=account)
-    #post_1 = "the-classic-meme-zg1hbmlh-ze3wl" pls upvote if you see this :)
-    votes = s.get_active_votes(account,post_1)
-
+def get_voter(post_identifier):
+    post_identifier = post_identifier.split("/")
+    votes = s.get_active_votes(post_identifier[0],post_identifier[1])
     voter = []
+    for i in votes:
+        if (i["voter"] != post_identifier[0]):
+            voter.append(i["voter"])
+    return voter
+
+def upvote_newest_post(usernames,default_account):
+    for i in usernames:
+        if (i!=account):
+            upvote_post = get_newest_post(i)
+        try:
+            s.commit.vote(identifier=upvote_post, weight=100, account=default_account)
+            
+        except exceptions.RPCError:
+            pass
 
 
-    for i in range(len(votes)):
-        if (votes[i]["voter"] != account):
-            voter.append(votes[i]["voter"])
-
-
-    suc_voter_count = 0
-    nopost_found = 0
-    #upvote a post
-    for i in range(len(voter)):
-        post_2 = newest_post(username=voter[i])
-
-        if (post_2!=None):
-            upvote_post = voter[i]+"/"+post_2
-            try:
-                s.commit.vote(identifier=upvote_post, weight=100, account=account)
-                suc_voter_count += 1
-            except exceptions.RPCError:
-                pass
-        else:
-            nopost_found +=1
-
-    log = "No post found for "+str(nopost_found)+"/"+str(len(voter))+" users\nsuccessfully voted for "+str(suc_voter_count)+"/"+str(len(voter))+" users.\n"
-    return log
-
-print(relike(account=account,keys=keys,nodes=nodes))
+while (1):
+    print("\n",time.ctime())
+    relike(account)
+    time.sleep(5*60)
