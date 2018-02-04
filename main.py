@@ -33,9 +33,7 @@ def get_newest_post(username):
         return newest_post[0]["author"]+"/"+newest_post[0]["permlink"]
     else:
         return None
-
-
-
+    
 def get_voter(post_identifier):
     post_identifier = post_identifier.split("/")
     votes = s.get_active_votes(post_identifier[0],post_identifier[1])
