@@ -47,8 +47,7 @@ def get_voter(post_identifier):
 
 def upvote_newest_post(usernames,default_account):
     for i in usernames:
-        if (i!=account):
-            upvote_post = get_newest_post(i)
+        upvote_post = get_newest_post(i)
         try:
             s.commit.vote(identifier=upvote_post, weight=100, account=default_account)
             
